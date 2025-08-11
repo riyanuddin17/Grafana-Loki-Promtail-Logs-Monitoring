@@ -1,0 +1,52 @@
+Instance Specifications:
+
+1) AMI= Ubuntu
+2) Instance type = t2.medium
+3) EBS volume= 8 GB (Default only)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+1) Grafana:
+
+sudo apt-get update
+sudo apt-get install -y apt-transport-https software-properties-common
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+sudo apt-get update
+sudo apt-get -y install grafana
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+2) Docker install:
+
+sudo apt install docker.io
+
+sudo usermod -aG docker $USER
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+3) Loki Config: Think of Loki as a "log storage and search engine."
+
+cd /home/ubuntu/
+
+wget https://raw.githubusercontent.com/grafana/loki/v2.8.0/cmd/loki/loki-local-config.yaml -O loki-config.yaml
+
+Run Loki Docker container:
+
+cd /home/ubuntu/
+
+docker run -d --name loki -v /home/ubuntu/loki-config.yaml:/mnt/config/loki-config.yaml -p 3100:3100 grafana/loki:2.8.0 --config.file=/mnt/config/loki-config.yaml
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+4) Promtail Config:Promtail is only responsible for reading and sending logs, nothing more.(Think of Promtail as a "log collector.")
+
+cd /home/ubuntu/
+
+wget https://raw.githubusercontent.com/grafana/loki/v2.8.0/clients/cmd/promtail/promtail-docker-config.yaml -O promtail-config.yaml
+
+Run Promtail Docker container:
+
+cd /home/ubuntu/
+
+docker run -d --name promtail -v /home/ubuntu/promtail-config.yaml:/mnt/config/promtail-config.yaml -v /var/log:/var/log --link loki grafana/promtail:2.8.0 --config.file=/mnt/config/promtail-config.yaml
